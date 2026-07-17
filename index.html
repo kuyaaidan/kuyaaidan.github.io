@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>My Private Notebook</title>
     <style>
         :root {
@@ -29,6 +29,7 @@
             margin: 0;
             padding: 0;
             transition: background-color 0.3s, color 0.3s;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
@@ -56,7 +57,7 @@
 
         .login-box {
             text-align: center;
-            padding: 2rem;
+            padding: 1.5rem;
             max-width: 400px;
             width: 90%;
         }
@@ -71,11 +72,12 @@
         .login-box p {
             color: #888;
             margin-bottom: 2rem;
+            font-size: 0.95rem;
         }
 
         .login-box input[type="password"] {
             width: 100%;
-            padding: 12px 20px;
+            padding: 14px 20px;
             border: 1px solid #333;
             background: #222;
             border-radius: 25px;
@@ -94,7 +96,7 @@
             background-color: var(--primary-color);
             color: white;
             border: none;
-            padding: 12px 30px;
+            padding: 14px 30px;
             border-radius: 25px;
             font-size: 1rem;
             font-weight: bold;
@@ -127,7 +129,25 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 2rem;
+            padding: 0 1.25rem;
+            z-index: 100;
+        }
+
+        .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        /* Menu Button for Mobile */
+        .btn-menu {
+            display: none; /* Desktop hidden */
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 4px 8px;
         }
 
         .logo {
@@ -139,7 +159,7 @@
 
         .nav-actions {
             display: flex;
-            gap: 1rem;
+            gap: 0.75rem;
             align-items: center;
         }
 
@@ -159,6 +179,7 @@
             grid-template-columns: 300px 1fr;
             height: calc(100vh - 60px);
             overflow: hidden;
+            position: relative;
         }
 
         /* Sidebar Table of Contents */
@@ -167,6 +188,8 @@
             border-right: 1px solid var(--border-color);
             padding: 1.5rem;
             overflow-y: auto;
+            z-index: 90;
+            transition: transform 0.3s ease;
         }
 
         .book-info {
@@ -175,8 +198,8 @@
         }
 
         .book-cover-placeholder {
-            width: 120px;
-            height: 180px;
+            width: 110px;
+            height: 165px;
             background: linear-gradient(135deg, var(--primary-color), #ff9f43);
             margin: 0 auto 1rem;
             border-radius: 4px;
@@ -199,7 +222,7 @@
         }
 
         .chapter-item {
-            padding: 10px 15px;
+            padding: 12px 15px;
             border-radius: 8px;
             cursor: pointer;
             margin-bottom: 0.3rem;
@@ -218,30 +241,43 @@
             font-weight: 600;
         }
 
+        /* Sidebar Overlay for Mobile */
+        .sidebar-overlay {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 80;
+        }
+
         /* Reader Area */
         main {
             overflow-y: auto;
-            padding: 3rem 2rem;
+            padding: 2rem 1rem;
             display: flex;
             justify-content: center;
+            -webkit-overflow-scrolling: touch;
         }
 
         .reader-wrapper {
-            max-width: 650px;
+            max-width: 600px;
             width: 100%;
         }
 
         .note-content {
             font-family: var(--font-serif);
-            font-size: 1.15rem;
+            font-size: 1.1rem;
             line-height: 1.8;
             word-wrap: break-word;
         }
 
         .note-content h2 {
             font-family: var(--font-sans);
-            font-size: 2rem;
-            margin-bottom: 2rem;
+            font-size: 1.75rem;
+            margin-bottom: 1.5rem;
             color: var(--text-color);
             border-bottom: 2px solid var(--border-color);
             padding-bottom: 0.5rem;
@@ -252,11 +288,11 @@
             text-align: justify;
         }
 
-        /* --- CONTACT INLINE BOX (NEW & IMPROVED) --- */
+        /* --- CONTACT INLINE BOX --- */
         .contact-box {
             font-family: var(--font-sans);
-            margin-top: 4rem;
-            padding: 2rem;
+            margin-top: 3.5rem;
+            padding: 1.5rem;
             border: 1px solid var(--border-color);
             background-color: var(--surface-color);
             border-radius: 12px;
@@ -264,14 +300,14 @@
         }
 
         .contact-box h3 {
-            font-size: 1.25rem;
+            font-size: 1.15rem;
             color: var(--text-color);
             margin-bottom: 0.3rem;
             text-align: center;
         }
 
         .contact-box p {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: var(--text-muted);
             margin-bottom: 1.2rem !important;
             text-align: center !important;
@@ -285,8 +321,8 @@
 
         .contact-form textarea {
             width: 100%;
-            height: 120px;
-            padding: 12px 15px;
+            height: 110px;
+            padding: 12px;
             border: 1px solid var(--border-color);
             border-radius: 8px;
             background-color: var(--bg-color);
@@ -295,6 +331,8 @@
             font-size: 0.95rem;
             resize: none;
             outline: none;
+            /* Prevents browser auto-zoom on iOS */
+            font-size: 16px; 
         }
 
         .contact-form textarea:focus {
@@ -305,7 +343,7 @@
             background-color: var(--primary-color);
             color: white;
             border: none;
-            padding: 12px;
+            padding: 14px;
             border-radius: 8px;
             font-size: 0.95rem;
             font-weight: bold;
@@ -317,10 +355,6 @@
             background-color: #e04f1a;
         }
 
-        .contact-form button:active {
-            transform: scale(0.98);
-        }
-
         /* Success screen overlay inside the contact box */
         .success-message {
             display: none;
@@ -330,22 +364,54 @@
 
         .success-message h4 {
             color: var(--primary-color);
-            font-size: 1.3rem;
+            font-size: 1.25rem;
             margin-bottom: 0.5rem;
         }
 
         .success-message p {
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             color: var(--text-color);
         }
 
-        /* Mobile Optimization */
+        /* --- PHONE & TABLET STYLING --- */
         @media (max-width: 768px) {
+            .btn-menu {
+                display: block; /* Show menu toggle */
+            }
+
             .container {
                 grid-template-columns: 1fr;
             }
+
             aside {
-                display: none; /* Simplification for mobile view */
+                position: absolute;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                width: 280px;
+                transform: translateX(-100%); /* Slide menu out of screen */
+            }
+
+            aside.open {
+                transform: translateX(0); /* Slide in menu */
+            }
+
+            aside.open + .sidebar-overlay {
+                display: block; /* Show background shadow when menu is open */
+            }
+
+            main {
+                padding: 1.5rem 1rem;
+            }
+
+            .note-content h2 {
+                font-size: 1.5rem;
+                margin-bottom: 1.25rem;
+            }
+
+            .note-content p {
+                font-size: 1.05rem; /* Highly readable mobile sizing */
+                line-height: 1.7;
             }
         }
     </style>
@@ -366,15 +432,18 @@
     <!-- MAIN APP SCREEN -->
     <div id="app">
         <header>
-            <a href="#" class="logo">wattpad</a>
+            <div class="nav-left">
+                <button class="btn-menu" onclick="toggleSidebar()">☰</button>
+                <a href="#" class="logo">wattpad</a>
+            </div>
             <div class="nav-actions">
                 <button class="btn-toggle" onclick="toggleTheme()">🌓 Theme</button>
             </div>
         </header>
 
         <div class="container">
-            <!-- Table of Contents Sidebar -->
-            <aside>
+            <!-- Sidebar Table of Contents -->
+            <aside id="sidebar">
                 <div class="book-info">
                     <div class="book-cover-placeholder"></div>
                     <div class="book-title">Secret</div>
@@ -382,10 +451,13 @@
                 </div>
                 <ul class="chapter-list">
                     <li class="chapter-item active" onclick="loadNote(0)">The Return</li>
-                    <li class="chapter-item" onclick="loadNote(1)">Not Yet Avilable</li>
+                    <li class="chapter-item" onclick="loadNote(1)">Not Yet Available</li>
                     <li class="chapter-item" onclick="loadNote(2)">Not Yet Available</li>
                 </ul>
             </aside>
+
+            <!-- Responsive Overlay for Mobile Sidebar -->
+            <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
             <!-- Reader Canvas -->
             <main>
@@ -401,7 +473,7 @@
     <script>
         // --- CONFIGURATION ---
         const SECRET_PASSWORD = "081725"; 
-        const FORMSPREE_FORM_ID = "xrenpopb"; // <-- PUT YOUR FORMSPREE ID HERE! (e.g., "xoqyzabc")
+        const FORMSPREE_FORM_ID = "YOUR_FORMSPREE_FORM_ID"; // <-- PUT YOUR FORMSPREE ID HERE! (e.g., "xoqyzabc")
 
         // Your notes/stories array
         const notesData = [
@@ -445,6 +517,12 @@
             }
         }
 
+        // --- MOBILE SIDEBAR DRAWER ---
+        function toggleSidebar() {
+            const sidebar = document.getElementById("sidebar");
+            sidebar.classList.toggle("open");
+        }
+
         // --- NOTE CHANGER ENGINE ---
         function loadNote(index) {
             const display = document.getElementById("noteDisplay");
@@ -457,7 +535,7 @@
                 
                 <div class="contact-box" id="contactArea">
                     <div id="formContainer">
-                        <h3>Write a quick reply?</h3>
+                        <h3>Write a quick reply</h3>
                         <p>Your message will be sent privately to Aidan.</p>
                         <form class="contact-form" onsubmit="submitForm(event, '${note.title}')">
                             <textarea name="message" id="replyMessage" placeholder="Write your thoughts here..." required></textarea>
@@ -481,6 +559,9 @@
                 }
             });
 
+            // Close sidebar automatically on mobile after selecting a chapter
+            document.getElementById("sidebar").classList.remove("open");
+
             // Scroll reader back to top
             document.querySelector('main').scrollTop = 0;
         }
@@ -495,12 +576,10 @@
             btn.innerText = "Sending...";
             btn.disabled = true;
 
-            // Prepare dynamic data payload
             const formData = new FormData();
             formData.append("Source Chapter", chapterTitle);
             formData.append("Message", messageText);
 
-            // POST to Formspree endpoint
             fetch(`https://formspree.io/f/${FORMSPREE_FORM_ID}`, {
                 method: "POST",
                 body: formData,
@@ -510,7 +589,6 @@
             })
             .then(response => {
                 if (response.ok) {
-                    // Smooth transition to Success view
                     document.getElementById("formContainer").style.display = "none";
                     document.getElementById("successMessage").style.display = "block";
                 } else {
