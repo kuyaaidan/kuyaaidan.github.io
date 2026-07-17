@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Private Notebook</title>
+    <style>
+        :root {
+            --primary-color: #FF6122; /* Wattpad Orange */
+            --bg-color: #F9F9F9;
+            --surface-color: #FFFFFF;
+            --text-color: #222222;
+            --text-muted: #666666;
+            --border-color: #E6E6E6;
+            --font-serif: 'Georgia', serif;
+            --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #111111;
+            --surface-color: #1A1A1A;
+            --text-color: #E0E0E0;
+            --text-muted: #A0A0A0;
+            --border-color: #333333;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- GATEWAY / PASSWORD SCREEN --- */
+        #gateway {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #111111;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            color: white;
+        }
+
+        .login-box {
+            text-align: center;
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .login-box h1 {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .login-box p {
+            color: #888;
+            margin-bottom: 2rem;
+        }
+
+        .login-box input[type="password"] {
+            width: 100%;
+            padding: 12px 20px;
+            border: 1px solid #333;
+            background: #222;
+            border-radius: 25px;
+            color: white;
+            font-size: 1rem;
+            text-align: center;
+            margin-bottom: 1rem;
+            outline: none;
+        }
+
+        .login-box input[type="password"]:focus {
+            border-color: var(--primary-color);
+        }
+
+        .login-box button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .login-box button:hover {
+            background-color: #e04f1a;
+        }
+
+        .error-msg {
+            color: #ff4a4a;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        /* --- MAIN APP INTERFACE --- */
+        #app {
+            display: none; /* Hidden until login */
+            height: 100vh;
+            grid-template-rows: 60px 1fr;
+        }
+
+        /* Navbar */
+        header {
+            background-color: var(--surface-color);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+        }
+
+        .logo {
+            color: var(--primary-color);
+            font-weight: bold;
+            font-size: 1.4rem;
+            text-decoration: none;
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .btn-toggle {
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 6px 12px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        /* Main Content Layout */
+        .container {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            height: calc(100vh - 60px);
+            overflow: hidden;
+        }
+
+        /* Sidebar Table of Contents */
+        aside {
+            background-color: var(--surface-color);
+            border-right: 1px solid var(--border-color);
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .book-info {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .book-cover-placeholder {
+            width: 120px;
+            height: 180px;
+            background: linear-gradient(135deg, var(--primary-color), #ff9f43);
+            margin: 0 auto 1rem;
+            border-radius: 4px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+
+        .book-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 0.2rem;
+        }
+
+        .book-author {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .chapter-list {
+            list-style: none;
+        }
+
+        .chapter-item {
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 0.3rem;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }
+
+        .chapter-item:hover {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        .chapter-item.active {
+            background-color: rgba(255, 97, 34, 0.1);
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        /* Reader Area */
+        main {
+            overflow-y: auto;
+            padding: 3rem 2rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        .reader-wrapper {
+            max-width: 650px;
+            width: 100%;
+        }
+
+        .note-content {
+            font-family: var(--font-serif);
+            font-size: 1.15rem;
+            line-height: 1.8;
+            word-wrap: break-word;
+        }
+
+        .note-content h2 {
+            font-family: var(--font-sans);
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            color: var(--text-color);
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .note-content p {
+            margin-bottom: 1.5rem;
+            text-align: justify;
+        }
+
+        /* --- CONTACT INLINE BOX (NEW & IMPROVED) --- */
+        .contact-box {
+            font-family: var(--font-sans);
+            margin-top: 4rem;
+            padding: 2rem;
+            border: 1px solid var(--border-color);
+            background-color: var(--surface-color);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+        }
+
+        .contact-box h3 {
+            font-size: 1.25rem;
+            color: var(--text-color);
+            margin-bottom: 0.3rem;
+            text-align: center;
+        }
+
+        .contact-box p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 1.2rem !important;
+            text-align: center !important;
+        }
+
+        .contact-form {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .contact-form textarea {
+            width: 100%;
+            height: 120px;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-sans);
+            font-size: 0.95rem;
+            resize: none;
+            outline: none;
+        }
+
+        .contact-form textarea:focus {
+            border-color: var(--primary-color);
+        }
+
+        .contact-form button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .contact-form button:hover {
+            background-color: #e04f1a;
+        }
+
+        .contact-form button:active {
+            transform: scale(0.98);
+        }
+
+        /* Success screen overlay inside the contact box */
+        .success-message {
+            display: none;
+            text-align: center;
+            padding: 1.5rem 0;
+        }
+
+        .success-message h4 {
+            color: var(--primary-color);
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .success-message p {
+            font-size: 0.95rem;
+            color: var(--text-color);
+        }
+
+        /* Mobile Optimization */
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            aside {
+                display: none; /* Simplification for mobile view */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- GATEWAY SCREEN -->
+    <div id="gateway">
+        <div class="login-box">
+            <h1>wattpad_</h1>
+            <p>This story is password protected.</p>
+            <input type="password" id="passwordField" placeholder="Enter Password" onkeydown="if(event.key === 'Enter') checkPassword()">
+            <button onclick="checkPassword()">Unlock Story</button>
+            <p class="error-msg" id="errorMsg">Incorrect password. Please try again. Try a date?</p>
+        </div>
+    </div>
+
+    <!-- MAIN APP SCREEN -->
+    <div id="app">
+        <header>
+            <a href="#" class="logo">wattpad</a>
+            <div class="nav-actions">
+                <button class="btn-toggle" onclick="toggleTheme()">🌓 Theme</button>
+            </div>
+        </header>
+
+        <div class="container">
+            <!-- Table of Contents Sidebar -->
+            <aside>
+                <div class="book-info">
+                    <div class="book-cover-placeholder"></div>
+                    <div class="book-title">Secret</div>
+                    <div class="book-author">by Anonymous</div>
+                </div>
+                <ul class="chapter-list">
+                    <li class="chapter-item active" onclick="loadNote(0)">The Return</li>
+                    <li class="chapter-item" onclick="loadNote(1)">Not Yet Avilable</li>
+                    <li class="chapter-item" onclick="loadNote(2)">Not Yet Available</li>
+                </ul>
+            </aside>
+
+            <!-- Reader Canvas -->
+            <main>
+                <div class="reader-wrapper">
+                    <article class="note-content" id="noteDisplay">
+                        <!-- Dynamic Content Loads Here -->
+                    </article>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const SECRET_PASSWORD = "081725"; 
+        const FORMSPREE_FORM_ID = "xrenpopb"; // <-- PUT YOUR FORMSPREE ID HERE! (e.g., "xoqyzabc")
+
+        // Your notes/stories array
+        const notesData = [
+            {
+                title: "The Return",
+                content: `
+                    <p style="text-align: end;">July 17, 2026</p>
+                    <p>Franchesca Kate J. Abugni, </p>
+                    <p>
+                        Hello! I hope this message finds you well. You might be wondering why I am only writing to you now, honestly even I don't really know. I know we haven't been talking recently, heck we haven't really spoken properly since March. I know your reasons, and I completely understand them. I know life hasn't been easy since you transferred there, dealing with a new environment, new people, and new things. I also know there are "restrictions" preventing you from contacting me, but I know you try. I guess a lot of emotions and feelings got mixed up during the time we haven't spoken. I was afraid of reaching out because of the fear of consequences. Since you mentioned last time that my chats were being seen, I got scared and stopped contacting you, hoping that things wouldn't get worse between you and your mother because of me. And honestly, at first, I thought you didn't care, I've seen you online sometimes but never messaged me, I've regularly checked your socmeds and seen you liking posts, but recently I've leabred that it's just really difficult to be in your position, and I understand why messaging me was difficult. I just really hope that you're doing okay. I hope you eat on time and sleep properly. I want you to know that I miss you very much. Everyday, I wonder how you are and wish for your happiness. As for me, I'm fine, I guess. Life has been moving fast, and I've been distracting myself with school and extra-curricular activities. Academically, I'm able to catch up, hope they're enough. My quiz scores are high, but others score higher. Being the SSLG Secretary is exhausting, though. Out of everyone, I might be the busiest (I think). I'm constantly juggling multiple roles, sometimes Secretary, sometimes VP, sometimes P.I.O. I've realized that being a member of the SSLG is not easy; you have to be incredibly flexible, act as a runner sometimes, and the paperwork is a total nightmare. Socially, I finally found a group of friends. I managed to get into the group, but I don't perfectly fit yet, I still feel a bit off and misplaced. Well anyway, I hope your fine, happy, and well. As I always remind, I'm always here.
+                    </p>
+                    <p style="text-align: end;">Yours truly, <br>Aidan Miguel M. Lausin</p>
+                `
+            },
+            {
+                title: "Wlay",
+                content: `
+                    <p>Di pa ngani available</p>
+                `
+            },
+            {
+                title: "Kulit ah",
+                content: `
+                    <p>Sabing 'di pa availablee</p>
+                `
+            }
+        ];
+
+        // --- PASSWORD CHECK ENGINE ---
+        function checkPassword() {
+            const input = document.getElementById("passwordField").value;
+            const error = document.getElementById("errorMsg");
+
+            if (input === SECRET_PASSWORD) {
+                document.getElementById("gateway").style.display = "none";
+                document.getElementById("app").style.display = "grid";
+                loadNote(0);
+            } else {
+                error.style.display = "block";
+                document.getElementById("passwordField").value = "";
+            }
+        }
+
+        // --- NOTE CHANGER ENGINE ---
+        function loadNote(index) {
+            const display = document.getElementById("noteDisplay");
+            const note = notesData[index];
+
+            // Render note content with the live message box
+            display.innerHTML = `
+                <h2>${note.title}</h2> 
+                ${note.content}
+                
+                <div class="contact-box" id="contactArea">
+                    <div id="formContainer">
+                        <h3>Write a quick reply?</h3>
+                        <p>Your message will be sent privately to Aidan.</p>
+                        <form class="contact-form" onsubmit="submitForm(event, '${note.title}')">
+                            <textarea name="message" id="replyMessage" placeholder="Write your thoughts here..." required></textarea>
+                            <button type="submit" id="sendBtn">Send Message</button>
+                        </form>
+                    </div>
+                    <div class="success-message" id="successMessage">
+                        <h4>Message Sent! 🧡</h4>
+                        <p>Thank you for writing back. Aidan will receive this shortly.</p>
+                    </div>
+                </div>
+            `;
+
+            // Update active state in sidebar
+            const items = document.querySelectorAll('.chapter-item');
+            items.forEach((item, idx) => {
+                if(idx === index) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+
+            // Scroll reader back to top
+            document.querySelector('main').scrollTop = 0;
+        }
+
+        // --- LIVE FORM SUBMISSION ENGINE ---
+        function submitForm(event, chapterTitle) {
+            event.preventDefault();
+            
+            const btn = document.getElementById("sendBtn");
+            const messageText = document.getElementById("replyMessage").value;
+            
+            btn.innerText = "Sending...";
+            btn.disabled = true;
+
+            // Prepare dynamic data payload
+            const formData = new FormData();
+            formData.append("Source Chapter", chapterTitle);
+            formData.append("Message", messageText);
+
+            // POST to Formspree endpoint
+            fetch(`https://formspree.io/f/${FORMSPREE_FORM_ID}`, {
+                method: "POST",
+                body: formData,
+                headers: {
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Smooth transition to Success view
+                    document.getElementById("formContainer").style.display = "none";
+                    document.getElementById("successMessage").style.display = "block";
+                } else {
+                    alert("Oops! There was a problem sending your message. Please try again.");
+                    btn.innerText = "Send Message";
+                    btn.disabled = false;
+                }
+            })
+            .catch(error => {
+                alert("Connection error. Could not send the message.");
+                btn.innerText = "Send Message";
+                btn.disabled = false;
+            });
+        }
+
+        // --- THEME TOGGLE ---
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            if (currentTheme === 'dark') {
+                document.documentElement.removeAttribute('data-theme');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        }
+    </script>
+</body>
+</html>
