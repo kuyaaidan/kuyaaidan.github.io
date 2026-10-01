@@ -49,42 +49,25 @@
         }
     </script>
     <style>
-        /*
-         * CANONICAL CARD COORDINATE SYSTEM
-         * Everything is designed at exactly 1000 x 1414 CSS pixels.
-         * Phone/laptop preview = scaled view of the same surface.
-         * PDF export = the same surface at full resolution.
-         */
-        :root { --card-w: 1000; --card-h: 1414; }
-
+        /* Container Query setup guarantees text scales smoothly regardless of screen or zoom */
         .card-preview-container {
-            width: min(100%, 440px);
-            aspect-ratio: 1000 / 1414;
+            container-type: inline-size;
+            width: 100%;
+            max-width: 440px;
+            aspect-ratio: 1 / 1.414;
             position: relative;
-            background: #ffffff;
+            background-repeat: no-repeat;
+            background-size: 100% 100%;
+            background-position: center;
             box-shadow: 0 12px 35px -5px rgba(0, 0, 0, 0.25);
             border-radius: 8px;
             overflow: hidden;
-            isolation: isolate;
-        }
-
-        /* Actual design surface. Never reflows with viewport size. */
-        .card-design-surface {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 1000px;
-            height: 1414px;
-            transform-origin: top left;
-            background-repeat: no-repeat;
-            background-size: 100% 100%;
-            background-position: center;
             background-color: #ffffff;
-            overflow: hidden;
         }
 
-        /* Exact same coordinate surface used for PDF rendering. */
+        /* High-density render target container */
         .card-export-target {
+            container-type: inline-size;
             width: 1000px;
             height: 1414px;
             position: relative;
@@ -93,35 +76,6 @@
             background-position: center;
             background-color: #ffffff;
             overflow: hidden;
-        }
-
-        .canonical-recipient,
-        .canonical-message,
-        .card-design-surface,
-        .card-export-target { user-select: none; }
-
-        @media (max-width: 767px) {
-            header > div {
-                height: auto !important;
-                min-height: 64px;
-                padding-top: 10px;
-                padding-bottom: 10px;
-                gap: 10px;
-                align-items: flex-start;
-            }
-            header nav { max-width: 52%; overflow-x: auto; flex-shrink: 0; }
-            header nav button { white-space: nowrap; }
-            main { padding: 12px !important; }
-            #view-user > .grid { gap: 16px; }
-            #cardMessage { min-height: 180px; }
-            input, select, textarea, button { font-size: 16px !important; }
-            input[type="range"] { font-size: initial !important; }
-            #modalCardRenderArea { overflow: hidden; }
-        }
-
-        @media print {
-            @page { size: A4 portrait; margin: 0; }
-            body { margin: 0 !important; background: #fff !important; }
         }
 
         .scrollbar-slim::-webkit-scrollbar {
@@ -261,16 +215,15 @@
 
                     <!-- Live Preview Box -->
                     <div id="liveCardPreview" class="card-preview-container relative select-none">
-                        <div id="liveCardSurface" class="card-design-surface">
-                            <div id="previewRecipientLayer" class="canonical-recipient">
-                                <p id="prevTeacherNameContainer" class="m-0 p-0 font-montserrat font-black">
-                                    To : T. <span id="prevTeacherName">Cecile Bustamante</span>
-                                </p>
-                            </div>
-                            <div id="previewMessageLayer" class="canonical-message">
-                                <div id="prevMessageText" class="whitespace-pre-line text-justify">
-                                    Write your message in the box on the left to see it update live here...
-                                </div>
+                        <div id="previewRecipientLayer" class="absolute transition-all duration-75">
+                            <p id="prevTeacherNameContainer" class="m-0 p-0 font-montserrat font-black">
+                                To : T. <span id="prevTeacherName">Cecile Bustamante</span>
+                            </p>
+                        </div>
+                        
+                        <div id="previewMessageLayer" class="absolute transition-all duration-75 overflow-hidden">
+                            <div id="prevMessageText" class="whitespace-pre-line text-justify">
+                                Write your message in the box on the left to see it update live here...
                             </div>
                         </div>
                     </div>
@@ -617,14 +570,14 @@
                 </p>
             </div>
             <div class="tpl-message-layer absolute overflow-hidden">
-                <div class="tpl-message whitespace-pre-line text-justify">
+                <div class="tpl-message font-sans whitespace-pre-line text-justify">
                     Message body...
                 </div>
             </div>
         </div>
 
         <!-- High-Res 2-in-1 Pair Container (2040px x 1440px) -->
-        <div id="render2in1PairTemplate" class="w-[2040px] h-[1440px] bg-white flex items-center justify-between relative">
+        <div id="render2in1PairTemplate" class="w-[2040px] h-[1440px] bg-white p-4 flex items-center justify-between relative">
             <div id="pairLeftCard" class="w-[1000px] h-[1414px] relative"></div>
             <!-- Center Cutting Guide Line -->
             <div class="w-[2px] h-full border-r-2 border-dashed border-slate-300"></div>
@@ -686,7 +639,6 @@
             syncLayoutControlsWithState();
             updateLayoutFromControls();
             updateLivePreview();
-            resizeLiveCardPreview();
             updateBadgeCount();
         });
 
@@ -761,75 +713,68 @@
 
         function updateUserTextSize(val) {
             document.getElementById('val_userTextSize').innerText = `${val}px`;
-            applyLayoutToDOM(parseFloat(val));
-            updateLivePreview();
+            const msgLayer = document.getElementById('previewMessageLayer');
+            if (msgLayer) {
+                // Convert px to cqw (Container Query Width) units
+                const fontCqw = (parseFloat(val) / REF_WIDTH) * 100;
+                msgLayer.style.fontSize = `${fontCqw}cqw`;
+            }
         }
 
         function applyLayoutToDOM(customMessageFontSize = null) {
-            // One canonical 1000 x 1414 design surface for every device and export.
-            const recFontPx = parseFloat(layoutConfig.recipientFontSize);
-            const activeMessageFontSize = customMessageFontSize !== null
-                ? parseFloat(customMessageFontSize)
-                : parseFloat(document.getElementById('userTextSize')?.value || layoutConfig.messageFontSize);
-
+            const recFontCqw = (layoutConfig.recipientFontSize / REF_WIDTH) * 100;
             const recLayer = document.getElementById('previewRecipientLayer');
             if (recLayer) {
-                recLayer.style.top = `${(layoutConfig.recipientY / 100) * 1414}px`;
-                recLayer.style.left = `${(layoutConfig.recipientX / 100) * 1000}px`;
-                recLayer.style.width = `${(layoutConfig.recipientWidth / 100) * 1000}px`;
-                recLayer.style.fontSize = `${recFontPx}px`;
+                recLayer.style.top = `${layoutConfig.recipientY}%`;
+                recLayer.style.left = `${layoutConfig.recipientX}%`;
+                recLayer.style.width = `${layoutConfig.recipientWidth}%`;
+                recLayer.style.fontSize = `${recFontCqw}cqw`;
                 recLayer.style.fontFamily = layoutConfig.recipientFontFamily;
                 recLayer.style.color = layoutConfig.recipientColor;
             }
 
+            const activeMessageFontSize = customMessageFontSize !== null ? customMessageFontSize : (document.getElementById('userTextSize')?.value || layoutConfig.messageFontSize);
+            const msgFontCqw = (parseFloat(activeMessageFontSize) / REF_WIDTH) * 100;
+
             const msgLayer = document.getElementById('previewMessageLayer');
             if (msgLayer) {
-                msgLayer.style.top = `${(layoutConfig.messageY / 100) * 1414}px`;
-                msgLayer.style.left = `${(layoutConfig.messageX / 100) * 1000}px`;
-                msgLayer.style.width = `${(layoutConfig.messageWidth / 100) * 1000}px`;
-                msgLayer.style.height = `${(layoutConfig.messageHeight / 100) * 1414}px`;
-                msgLayer.style.fontSize = `${activeMessageFontSize}px`;
+                msgLayer.style.top = `${layoutConfig.messageY}%`;
+                msgLayer.style.left = `${layoutConfig.messageX}%`;
+                msgLayer.style.width = `${layoutConfig.messageWidth}%`;
+                msgLayer.style.height = `${layoutConfig.messageHeight}%`;
+                msgLayer.style.fontSize = `${msgFontCqw}cqw`;
                 msgLayer.style.lineHeight = layoutConfig.messageLineHeight;
                 msgLayer.style.fontFamily = layoutConfig.messageFontFamily;
                 msgLayer.style.color = layoutConfig.messageColor;
             }
 
-            const preview = document.getElementById('liveCardPreview');
-            const surface = document.getElementById('liveCardSurface');
-            if (preview && surface) surface.style.transform = `scale(${preview.clientWidth / 1000})`;
-
+            // Export Target Overlays (Uses container queries too so proportions match pixel-for-pixel)
             const exportTarget = document.getElementById('renderSingleTemplate');
             if (exportTarget) {
                 const expRec = exportTarget.querySelector('.tpl-recipient-layer');
                 const expMsg = exportTarget.querySelector('.tpl-message-layer');
+
                 if (expRec) {
-                    expRec.style.top = `${(layoutConfig.recipientY / 100) * 1414}px`;
-                    expRec.style.left = `${(layoutConfig.recipientX / 100) * 1000}px`;
-                    expRec.style.width = `${(layoutConfig.recipientWidth / 100) * 1000}px`;
-                    expRec.style.fontSize = `${recFontPx}px`;
+                    expRec.style.top = `${layoutConfig.recipientY}%`;
+                    expRec.style.left = `${layoutConfig.recipientX}%`;
+                    expRec.style.width = `${layoutConfig.recipientWidth}%`;
+                    expRec.style.fontSize = `${recFontCqw}cqw`;
                     expRec.style.fontFamily = layoutConfig.recipientFontFamily;
                     expRec.style.color = layoutConfig.recipientColor;
                 }
+
                 if (expMsg) {
-                    expMsg.style.top = `${(layoutConfig.messageY / 100) * 1414}px`;
-                    expMsg.style.left = `${(layoutConfig.messageX / 100) * 1000}px`;
-                    expMsg.style.width = `${(layoutConfig.messageWidth / 100) * 1000}px`;
-                    expMsg.style.height = `${(layoutConfig.messageHeight / 100) * 1414}px`;
-                    expMsg.style.fontSize = `${activeMessageFontSize}px`;
+                    expMsg.style.top = `${layoutConfig.messageY}%`;
+                    expMsg.style.left = `${layoutConfig.messageX}%`;
+                    expMsg.style.width = `${layoutConfig.messageWidth}%`;
+                    expMsg.style.height = `${layoutConfig.messageHeight}%`;
+                    expMsg.style.fontSize = `${msgFontCqw}cqw`;
                     expMsg.style.lineHeight = layoutConfig.messageLineHeight;
                     expMsg.style.fontFamily = layoutConfig.messageFontFamily;
                     expMsg.style.color = layoutConfig.messageColor;
                 }
             }
         }
-
-        function resizeLiveCardPreview() {
-            const preview = document.getElementById('liveCardPreview');
-            const surface = document.getElementById('liveCardSurface');
-            if (!preview || !surface) return;
-            surface.style.transform = `scale(${preview.clientWidth / 1000})`;
-        }
-        window.addEventListener('resize', resizeLiveCardPreview);
 
         // Convert array buffer / PDF page to ultra-high-res DataURL
         async function renderPdfToDataUrl(pdfData) {
@@ -915,8 +860,7 @@
         }
 
         function applyTemplateToElements(dataUrl) {
-            const liveSurface = document.getElementById('liveCardSurface');
-            if (liveSurface) liveSurface.style.backgroundImage = `url("${dataUrl}")`;
+            document.getElementById('liveCardPreview').style.backgroundImage = `url("${dataUrl}")`;
             document.getElementById('renderSingleTemplate').style.backgroundImage = `url("${dataUrl}")`;
         }
 
@@ -1035,7 +979,8 @@
             
             const msgLayer = document.getElementById('previewMessageLayer');
             if (msgLayer) {
-                msgLayer.style.fontSize = `${textSize}px`;
+                const fontCqw = (textSize / REF_WIDTH) * 100;
+                msgLayer.style.fontSize = `${fontCqw}cqw`;
             }
 
             document.getElementById('charCount').innerText = `${document.getElementById('cardMessage').value.length} / 1500`;
@@ -1208,14 +1153,18 @@
 
             const clone = document.getElementById('liveCardPreview').cloneNode(true);
             clone.style.width = '350px';
-            clone.style.height = `${350 * 1414 / 1000}px`;
-            const cloneSurface = clone.querySelector('#liveCardSurface');
-            if (cloneSurface) cloneSurface.style.transform = 'scale(0.35)';
+            clone.style.height = '495px';
+            
             clone.querySelector('#prevTeacherName').innerText = card.teacherName;
             clone.querySelector('#prevMessageText').innerText = card.message;
+
             const customSize = card.textSize || layoutConfig.messageFontSize;
             const previewMsg = clone.querySelector('#previewMessageLayer');
-            if (previewMsg) previewMsg.style.fontSize = `${parseFloat(customSize)}px`;
+            if (previewMsg) {
+                const fontCqw = (customSize / REF_WIDTH) * 100;
+                previewMsg.style.fontSize = `${fontCqw}cqw`;
+            }
+
             area.appendChild(clone);
 
             document.getElementById('btnDownloadSinglePDF').onclick = () => downloadSingleCardPDF(card);
@@ -1246,10 +1195,10 @@
             applyLayoutToDOM(customSize);
 
             try {
-                const canvas = await html2canvas(template, {
-                    scale: 2, width: 1000, height: 1414,
-                    useCORS: true, allowTaint: true,
-                    backgroundColor: '#ffffff', logging: false
+                const canvas = await html2canvas(template, { 
+                    scale: 3, 
+                    useCORS: true, 
+                    allowTaint: true 
                 });
                 const imgData = canvas.toDataURL('image/jpeg', 0.92);
 
@@ -1270,24 +1219,19 @@
         }
 
         function buildSingleCardHTML(card) {
-            const customSize = parseFloat(card.textSize || layoutConfig.messageFontSize);
-            const recFontPx = parseFloat(layoutConfig.recipientFontSize);
-            const recTop = (layoutConfig.recipientY / 100) * 1414;
-            const recLeft = (layoutConfig.recipientX / 100) * 1000;
-            const recWidth = (layoutConfig.recipientWidth / 100) * 1000;
-            const msgTop = (layoutConfig.messageY / 100) * 1414;
-            const msgLeft = (layoutConfig.messageX / 100) * 1000;
-            const msgWidth = (layoutConfig.messageWidth / 100) * 1000;
-            const msgHeight = (layoutConfig.messageHeight / 100) * 1414;
+            const customSize = card.textSize || layoutConfig.messageFontSize;
+            const msgFontCqw = (customSize / REF_WIDTH) * 100;
+            const recFontCqw = (layoutConfig.recipientFontSize / REF_WIDTH) * 100;
+
             return `
-                <div class="card-export-target relative" style="background-image: url('${currentTemplateDataUrl}')">
-                    <div class="tpl-recipient-layer canonical-recipient" style="top:${recTop}px;left:${recLeft}px;width:${recWidth}px;font-size:${recFontPx}px;font-family:${layoutConfig.recipientFontFamily};color:${layoutConfig.recipientColor};">
+                <div class="card-export-target border border-slate-200 relative" style="background-image: url('${currentTemplateDataUrl}')">
+                    <div class="tpl-recipient-layer absolute" style="top: ${layoutConfig.recipientY}%; left: ${layoutConfig.recipientX}%; width: ${layoutConfig.recipientWidth}%; font-size: ${recFontCqw}cqw; font-family: ${layoutConfig.recipientFontFamily}; color: ${layoutConfig.recipientColor};">
                         <p class="tpl-teacher-container m-0 p-0 font-montserrat font-black">
                             To : T. <span class="tpl-teacher underline decoration-purple-300 underline-offset-2">${escapeHtml(card.teacherName)}</span>
                         </p>
                     </div>
-                    <div class="tpl-message-layer canonical-message" style="top:${msgTop}px;left:${msgLeft}px;width:${msgWidth}px;height:${msgHeight}px;font-size:${customSize}px;line-height:${layoutConfig.messageLineHeight};font-family:${layoutConfig.messageFontFamily};color:${layoutConfig.messageColor};">
-                        <div class="tpl-message whitespace-pre-line text-justify">${escapeHtml(card.message)}</div>
+                    <div class="tpl-message-layer absolute overflow-hidden" style="top: ${layoutConfig.messageY}%; left: ${layoutConfig.messageX}%; width: ${layoutConfig.messageWidth}%; height: ${layoutConfig.messageHeight}%; font-size: ${msgFontCqw}cqw; line-height: ${layoutConfig.messageLineHeight}; font-family: ${layoutConfig.messageFontFamily}; color: ${layoutConfig.messageColor};">
+                        <div class="tpl-message font-sans whitespace-pre-line text-justify">${escapeHtml(card.message)}</div>
                     </div>
                 </div>
             `;
@@ -1335,10 +1279,10 @@
                     pairRight.style.visibility = 'hidden';
                 }
 
-                const canvas = await html2canvas(pairContainer, {
-                    scale: 1.5, width: 2040, height: 1440,
-                    useCORS: true, allowTaint: true,
-                    backgroundColor: '#ffffff', logging: false
+                const canvas = await html2canvas(pairContainer, { 
+                    scale: 3, 
+                    useCORS: true, 
+                    allowTaint: true 
                 });
                 const imgData = canvas.toDataURL('image/jpeg', 0.92);
 
