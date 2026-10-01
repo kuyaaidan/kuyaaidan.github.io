@@ -49,7 +49,9 @@
         }
     </script>
     <style>
+        /* Container Query setup guarantees text scales smoothly regardless of screen or zoom */
         .card-preview-container {
+            container-type: inline-size;
             width: 100%;
             max-width: 440px;
             aspect-ratio: 1 / 1.414;
@@ -65,6 +67,7 @@
 
         /* High-density render target container */
         .card-export-target {
+            container-type: inline-size;
             width: 1000px;
             height: 1414px;
             position: relative;
@@ -92,8 +95,8 @@
     <header class="bg-brand-purple text-white shadow-md sticky top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center bg-brand-purpleDark shadow-inner">
-                    <img src="/logo.png" alt="logo namin">
+                <div class="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center bg-brand-purpleDark shadow-inner overflow-hidden">
+                    <img src="/logo.png" alt="logo namin" class="w-full h-full object-cover">
                 </div>
                 <div>
                     <h1 class="font-montserrat font-black text-lg sm:text-xl tracking-tight uppercase leading-none">THE ECOSYSTEM</h1>
@@ -213,7 +216,7 @@
                     <!-- Live Preview Box -->
                     <div id="liveCardPreview" class="card-preview-container relative select-none">
                         <div id="previewRecipientLayer" class="absolute transition-all duration-75">
-                            <p id="prevTeacherNameContainer" class="m-0 p-0">
+                            <p id="prevTeacherNameContainer" class="m-0 p-0 font-montserrat font-black">
                                 To : T. <span id="prevTeacherName">Cecile Bustamante</span>
                             </p>
                         </div>
@@ -279,8 +282,8 @@
 
                         <div class="grid grid-cols-2 gap-3 text-xs">
                             <div>
-                                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Top Position Y (%): <span id="val_recipientY" class="font-mono text-brand-purple font-bold">36%</span></label>
-                                <input type="range" id="recipientY" min="5" max="85" step="0.5" value="36" oninput="updateLayoutFromControls()" class="w-full accent-brand-purple">
+                                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Top Position Y (%): <span id="val_recipientY" class="font-mono text-brand-purple font-bold">27%</span></label>
+                                <input type="range" id="recipientY" min="5" max="85" step="0.5" value="27" oninput="updateLayoutFromControls()" class="w-full accent-brand-purple">
                             </div>
                             <div>
                                 <label class="block text-[11px] font-semibold text-slate-600 mb-1">Left Margin X (%): <span id="val_recipientX" class="font-mono text-brand-purple font-bold">8%</span></label>
@@ -299,7 +302,7 @@
                                 <select id="recipientFontFamily" onchange="updateLayoutFromControls()" class="w-full p-1.5 border border-slate-300 rounded text-xs bg-white">
                                     <option value="Montserrat, sans-serif">Montserrat (Bold Modern)</option>
                                     <option value="Inter, sans-serif">Inter (Clean Sans)</option>
-                                    <option value="Playfair Display, serif">Playfair Display (Serif)</option>
+                                    <option value="Playfair Display, serif" selected>Playfair Display (Serif)</option>
                                     <option value="Caveat, cursive">Caveat (Handwriting)</option>
                                 </select>
                             </div>
@@ -319,8 +322,8 @@
 
                         <div class="grid grid-cols-2 gap-3 text-xs">
                             <div>
-                                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Top Position Y (%): <span id="val_messageY" class="font-mono text-brand-purple font-bold">42%</span></label>
-                                <input type="range" id="messageY" min="10" max="85" step="0.5" value="42" oninput="updateLayoutFromControls()" class="w-full accent-brand-purple">
+                                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Top Position Y (%): <span id="val_messageY" class="font-mono text-brand-purple font-bold">31%</span></label>
+                                <input type="range" id="messageY" min="10" max="85" step="0.5" value="31" oninput="updateLayoutFromControls()" class="w-full accent-brand-purple">
                             </div>
                             <div>
                                 <label class="block text-[11px] font-semibold text-slate-600 mb-1">Left Margin X (%): <span id="val_messageX" class="font-mono text-brand-purple font-bold">8%</span></label>
@@ -350,7 +353,7 @@
                             <div>
                                 <label class="block text-[11px] font-semibold text-slate-600 mb-1">Font Family</label>
                                 <select id="messageFontFamily" onchange="updateLayoutFromControls()" class="w-full p-1.5 border border-slate-300 rounded text-xs bg-white">
-                                    <option value="Inter, sans-serif">Inter (Clean Sans)</option>
+                                    <option value="Inter, sans-serif" selected>Inter (Clean Sans)</option>
                                     <option value="Montserrat, sans-serif">Montserrat</option>
                                     <option value="Playfair Display, serif">Playfair Display (Serif)</option>
                                     <option value="Caveat, cursive">Caveat (Handwriting)</option>
@@ -543,7 +546,7 @@
                 </button>
             </div>
 
-            <div id="modalCardRenderArea" class="scale-90 transform origin-top"></div>
+            <div id="modalCardRenderArea" class="scale-90 transform origin-top w-full flex justify-center"></div>
 
             <div class="flex items-center gap-3 w-full pt-2 border-t">
                 <button id="btnDownloadSinglePDF" class="flex-1 py-2.5 bg-brand-purple text-white font-bold text-xs rounded-xl shadow hover:bg-brand-purpleDark flex items-center justify-center gap-2">
@@ -600,6 +603,9 @@
 
         const ADMIN_PASSWORD = "cuteangmganalayout";
 
+        // Reference width constant (440px preview container width)
+        const REF_WIDTH = 440;
+
         const DEFAULT_LAYOUT = {
             recipientY: 27,
             recipientX: 8,
@@ -619,29 +625,6 @@
         };
 
         let layoutConfig = { ...DEFAULT_LAYOUT };
-
-        const DEFAULT_SUBMISSIONS = [
-            {
-                id: 'sub-1',
-                studentName: 'Juan Dela Cruz',
-                gradeLevel: 'Grade 10',
-                section: 'Einstein',
-                teacherName: 'Santos',
-                message: 'Thank you so much for inspiring us every single day! Your passion for teaching Mathematics makes even the hardest calculus problems seem manageable and fun. Happy Teacher\'s Day!',
-                textSize: 13,
-                timestamp: '2026-10-01 09:15 AM'
-            },
-            {
-                id: 'sub-2',
-                studentName: 'Samantha Reyes',
-                gradeLevel: 'Grade 11',
-                section: 'STEM A',
-                teacherName: 'Gomez',
-                message: 'To the best Science teacher ever! Thank you for going above and beyond to prepare awesome experiments for our class. We truly appreciate your patience and kindness.',
-                textSize: 13,
-                timestamp: '2026-10-01 10:30 AM'
-            }
-        ];
 
         let submissions = [];
         let activeTab = 'user';
@@ -732,22 +715,26 @@
             document.getElementById('val_userTextSize').innerText = `${val}px`;
             const msgLayer = document.getElementById('previewMessageLayer');
             if (msgLayer) {
-                msgLayer.style.fontSize = `${val}px`;
+                // Convert px to cqw (Container Query Width) units
+                const fontCqw = (parseFloat(val) / REF_WIDTH) * 100;
+                msgLayer.style.fontSize = `${fontCqw}cqw`;
             }
         }
 
         function applyLayoutToDOM(customMessageFontSize = null) {
+            const recFontCqw = (layoutConfig.recipientFontSize / REF_WIDTH) * 100;
             const recLayer = document.getElementById('previewRecipientLayer');
             if (recLayer) {
                 recLayer.style.top = `${layoutConfig.recipientY}%`;
                 recLayer.style.left = `${layoutConfig.recipientX}%`;
                 recLayer.style.width = `${layoutConfig.recipientWidth}%`;
-                recLayer.style.fontSize = `${layoutConfig.recipientFontSize}px`;
+                recLayer.style.fontSize = `${recFontCqw}cqw`;
                 recLayer.style.fontFamily = layoutConfig.recipientFontFamily;
                 recLayer.style.color = layoutConfig.recipientColor;
             }
 
             const activeMessageFontSize = customMessageFontSize !== null ? customMessageFontSize : (document.getElementById('userTextSize')?.value || layoutConfig.messageFontSize);
+            const msgFontCqw = (parseFloat(activeMessageFontSize) / REF_WIDTH) * 100;
 
             const msgLayer = document.getElementById('previewMessageLayer');
             if (msgLayer) {
@@ -755,24 +742,23 @@
                 msgLayer.style.left = `${layoutConfig.messageX}%`;
                 msgLayer.style.width = `${layoutConfig.messageWidth}%`;
                 msgLayer.style.height = `${layoutConfig.messageHeight}%`;
-                msgLayer.style.fontSize = `${activeMessageFontSize}px`;
+                msgLayer.style.fontSize = `${msgFontCqw}cqw`;
                 msgLayer.style.lineHeight = layoutConfig.messageLineHeight;
                 msgLayer.style.fontFamily = layoutConfig.messageFontFamily;
                 msgLayer.style.color = layoutConfig.messageColor;
             }
 
-            // Export Target Overlays (Scale factor 1000px / 440px preview width)
+            // Export Target Overlays (Uses container queries too so proportions match pixel-for-pixel)
             const exportTarget = document.getElementById('renderSingleTemplate');
             if (exportTarget) {
                 const expRec = exportTarget.querySelector('.tpl-recipient-layer');
                 const expMsg = exportTarget.querySelector('.tpl-message-layer');
-                const scale = 1000 / 440;
 
                 if (expRec) {
                     expRec.style.top = `${layoutConfig.recipientY}%`;
                     expRec.style.left = `${layoutConfig.recipientX}%`;
                     expRec.style.width = `${layoutConfig.recipientWidth}%`;
-                    expRec.style.fontSize = `${layoutConfig.recipientFontSize * scale}px`;
+                    expRec.style.fontSize = `${recFontCqw}cqw`;
                     expRec.style.fontFamily = layoutConfig.recipientFontFamily;
                     expRec.style.color = layoutConfig.recipientColor;
                 }
@@ -782,7 +768,7 @@
                     expMsg.style.left = `${layoutConfig.messageX}%`;
                     expMsg.style.width = `${layoutConfig.messageWidth}%`;
                     expMsg.style.height = `${layoutConfig.messageHeight}%`;
-                    expMsg.style.fontSize = `${activeMessageFontSize * scale}px`;
+                    expMsg.style.fontSize = `${msgFontCqw}cqw`;
                     expMsg.style.lineHeight = layoutConfig.messageLineHeight;
                     expMsg.style.fontFamily = layoutConfig.messageFontFamily;
                     expMsg.style.color = layoutConfig.messageColor;
@@ -790,13 +776,13 @@
             }
         }
 
-        // Helper: Convert array buffer / PDF page to ultra-high-res DataURL
+        // Convert array buffer / PDF page to ultra-high-res DataURL
         async function renderPdfToDataUrl(pdfData) {
             const loadingTask = pdfjsLib.getDocument(pdfData);
             const pdf = await loadingTask.promise;
             const page = await pdf.getPage(1);
 
-            const viewport = page.getViewport({ scale: 3.0 }); // 3x high-DPI capture
+            const viewport = page.getViewport({ scale: 3.0 });
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             canvas.width = viewport.width;
@@ -807,24 +793,19 @@
         }
 
         async function initDefaultTemplateGraphic() {
-            // 1. Try loading template.pdf first
             try {
                 const pdfDataUrl = await renderPdfToDataUrl({ url: './template.pdf' });
                 currentTemplateDataUrl = pdfDataUrl;
                 applyTemplateToElements(currentTemplateDataUrl);
                 return;
-            } catch(e) {
-                // PDF not present or failed, fallback to template.png
-            }
+            } catch(e) {}
 
-            // 2. Try loading template.png
             const img = new Image();
             img.onload = function() {
                 currentTemplateDataUrl = './template.png';
                 applyTemplateToElements(currentTemplateDataUrl);
             };
             img.onerror = function() {
-                // 3. Procedural Fallback Graphics Canvas
                 const canvas = document.createElement('canvas');
                 canvas.width = 2000;
                 canvas.height = 2828;
@@ -913,21 +894,17 @@
             alert('Restored default background graphic.');
         }
 
-        // This replaces loadSubmissions() and saveSubmissions()
         function loadSubmissions() {
-            // Listen to the database in real-time
             db.collection("submissions").onSnapshot((querySnapshot) => {
                 submissions = [];
                 querySnapshot.forEach((doc) => {
                     submissions.push(doc.data());
                 });
                 
-                // Sort newest first based on ID
                 submissions.sort((a, b) => b.id.localeCompare(a.id));
                 
                 updateBadgeCount();
                 
-                // If admin is viewing, refresh the table live!
                 if (activeTab === 'admin') {
                     renderAdminDashboard();
                 }
@@ -1002,7 +979,8 @@
             
             const msgLayer = document.getElementById('previewMessageLayer');
             if (msgLayer) {
-                msgLayer.style.fontSize = `${textSize}px`;
+                const fontCqw = (textSize / REF_WIDTH) * 100;
+                msgLayer.style.fontSize = `${fontCqw}cqw`;
             }
 
             document.getElementById('charCount').innerText = `${document.getElementById('cardMessage').value.length} / 1500`;
@@ -1030,36 +1008,35 @@
         }
 
         function processFinalSubmission() {
-        const userSize = parseFloat(document.getElementById('userTextSize').value) || layoutConfig.messageFontSize;
+            const userSize = parseFloat(document.getElementById('userTextSize').value) || layoutConfig.messageFontSize;
 
-        const newCard = {
-            id: 'sub-' + Date.now(),
-            studentName: document.getElementById('studentName').value.trim(),
-            gradeLevel: document.getElementById('gradeLevel').value,
-            section: document.getElementById('section').value.trim(),
-            teacherName: document.getElementById('teacherName').value.trim(),
-            message: document.getElementById('cardMessage').value.trim(),
-            textSize: userSize,
-            timestamp: new Date().toLocaleString()
-        };
+            const newCard = {
+                id: 'sub-' + Date.now(),
+                studentName: document.getElementById('studentName').value.trim(),
+                gradeLevel: document.getElementById('gradeLevel').value,
+                section: document.getElementById('section').value.trim(),
+                teacherName: document.getElementById('teacherName').value.trim(),
+                message: document.getElementById('cardMessage').value.trim(),
+                textSize: userSize,
+                timestamp: new Date().toLocaleString()
+            };
 
-        // Save to Firebase (loadSubmissions will automatically detect this and update)
-        db.collection("submissions").doc(newCard.id).set(newCard).then(() => {
-            document.getElementById('studentName').value = '';
-            document.getElementById('gradeLevel').value = '';
-            document.getElementById('section').value = '';
-            document.getElementById('teacherName').value = '';
-            document.getElementById('cardMessage').value = '';
-            document.getElementById('userTextSize').value = layoutConfig.messageFontSize;
-            document.getElementById('val_userTextSize').innerText = `${layoutConfig.messageFontSize}px`;
-            updateLivePreview();
+            db.collection("submissions").doc(newCard.id).set(newCard).then(() => {
+                document.getElementById('studentName').value = '';
+                document.getElementById('gradeLevel').value = '';
+                document.getElementById('section').value = '';
+                document.getElementById('teacherName').value = '';
+                document.getElementById('cardMessage').value = '';
+                document.getElementById('userTextSize').value = layoutConfig.messageFontSize;
+                document.getElementById('val_userTextSize').innerText = `${layoutConfig.messageFontSize}px`;
+                updateLivePreview();
 
-            closeModal('modalConfirm');
-            alert('Your feature message has been submitted successfully!');
-        }).catch((error) => {
-            alert("Error submitting: " + error.message);
-        });
-    }
+                closeModal('modalConfirm');
+                alert('Your feature message has been submitted successfully!');
+            }).catch((error) => {
+                alert("Error submitting: " + error.message);
+            });
+        }
 
         function renderAdminDashboard() {
             updateAdminStats();
@@ -1184,7 +1161,8 @@
             const customSize = card.textSize || layoutConfig.messageFontSize;
             const previewMsg = clone.querySelector('#previewMessageLayer');
             if (previewMsg) {
-                previewMsg.style.fontSize = `${customSize}px`;
+                const fontCqw = (customSize / REF_WIDTH) * 100;
+                previewMsg.style.fontSize = `${fontCqw}cqw`;
             }
 
             area.appendChild(clone);
@@ -1241,18 +1219,18 @@
         }
 
         function buildSingleCardHTML(card) {
-            const scale = 1000 / 440;
-            const customSize = (card.textSize || layoutConfig.messageFontSize) * scale;
-            const recFontSize = layoutConfig.recipientFontSize * scale;
+            const customSize = card.textSize || layoutConfig.messageFontSize;
+            const msgFontCqw = (customSize / REF_WIDTH) * 100;
+            const recFontCqw = (layoutConfig.recipientFontSize / REF_WIDTH) * 100;
 
             return `
                 <div class="card-export-target border border-slate-200 relative" style="background-image: url('${currentTemplateDataUrl}')">
-                    <div class="tpl-recipient-layer absolute" style="top: ${layoutConfig.recipientY}%; left: ${layoutConfig.recipientX}%; width: ${layoutConfig.recipientWidth}%; font-size: ${recFontSize}px; font-family: ${layoutConfig.recipientFontFamily}; color: ${layoutConfig.recipientColor};">
+                    <div class="tpl-recipient-layer absolute" style="top: ${layoutConfig.recipientY}%; left: ${layoutConfig.recipientX}%; width: ${layoutConfig.recipientWidth}%; font-size: ${recFontCqw}cqw; font-family: ${layoutConfig.recipientFontFamily}; color: ${layoutConfig.recipientColor};">
                         <p class="tpl-teacher-container m-0 p-0 font-montserrat font-black">
                             To : T. <span class="tpl-teacher underline decoration-purple-300 underline-offset-2">${escapeHtml(card.teacherName)}</span>
                         </p>
                     </div>
-                    <div class="tpl-message-layer absolute overflow-hidden" style="top: ${layoutConfig.messageY}%; left: ${layoutConfig.messageX}%; width: ${layoutConfig.messageWidth}%; height: ${layoutConfig.messageHeight}%; font-size: ${customSize}px; line-height: ${layoutConfig.messageLineHeight}; font-family: ${layoutConfig.messageFontFamily}; color: ${layoutConfig.messageColor};">
+                    <div class="tpl-message-layer absolute overflow-hidden" style="top: ${layoutConfig.messageY}%; left: ${layoutConfig.messageX}%; width: ${layoutConfig.messageWidth}%; height: ${layoutConfig.messageHeight}%; font-size: ${msgFontCqw}cqw; line-height: ${layoutConfig.messageLineHeight}; font-family: ${layoutConfig.messageFontFamily}; color: ${layoutConfig.messageColor};">
                         <div class="tpl-message font-sans whitespace-pre-line text-justify">${escapeHtml(card.message)}</div>
                     </div>
                 </div>
