@@ -49,7 +49,6 @@
         }
     </script>
     <style>
-        /* Container Query setup guarantees text scales smoothly regardless of screen or zoom */
         .card-preview-container {
             container-type: inline-size;
             width: 100%;
@@ -65,7 +64,6 @@
             background-color: #ffffff;
         }
 
-        /* High-density render target container */
         .card-export-target {
             container-type: inline-size;
             width: 1000px;
@@ -111,7 +109,6 @@
                 </div>
             </div>
 
-            <!-- Navigation Switcher -->
             <nav class="flex space-x-2 bg-brand-purpleDark/50 p-1 rounded-xl border border-white/10">
                 <button id="tab-user" onclick="switchTab('user')" class="px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-white text-brand-purple shadow-sm flex items-center space-x-2">
                     <i class="fa-solid fa-pen-to-square"></i>
@@ -133,7 +130,6 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                 
-                <!-- Input Form -->
                 <div class="lg:col-span-5 bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
                     
                     <div class="border-b pb-3">
@@ -189,7 +185,7 @@
                                 <label for="userTextSize" class="block text-xs font-semibold text-slate-700 uppercase">Message Text Size</label>
                                 <span id="val_userTextSize" class="text-xs font-mono font-bold text-brand-purple">13px</span>
                             </div>
-                            <input type="range" id="userTextSize" min="8" max="13" step="0.1" value="13" oninput="updateUserTextSize(this.value)" class="w-full accent-brand-purple cursor-pointer">
+                            <input type="range" id="userTextSize" min="8" max="28" step="0.5" value="13" oninput="updateUserTextSize(this.value)" class="w-full accent-brand-purple cursor-pointer">
                         </div>
 
                         <div>
@@ -220,7 +216,6 @@
                         <span class="text-xs text-slate-400">Overlaid on background template</span>
                     </div>
 
-                    <!-- Live Preview Box -->
                     <div id="liveCardPreview" class="card-preview-container relative select-none">
                         <div id="previewRecipientLayer" class="absolute transition-all duration-75">
                             <p id="prevTeacherNameContainer" class="m-0 p-0 font-montserrat font-black">
@@ -348,6 +343,16 @@
                                 <label class="block text-[11px] font-semibold text-slate-600 mb-1">Default Font Size (px): <span id="val_messageFontSize" class="font-mono text-brand-purple font-bold">13px</span></label>
                                 <input type="range" id="messageFontSize" min="8" max="28" step="0.5" value="13" oninput="updateLayoutFromControls()" class="w-full accent-brand-purple">
                             </div>
+
+                            <!-- NEW: Global Font Size Scale Multiplier -->
+                            <div class="col-span-2 sm:col-span-1 bg-purple-100/60 p-2 rounded-lg border border-purple-200">
+                                <label class="block text-[11px] font-bold text-brand-purple mb-1">
+                                    Global Size Scale (%): <span id="val_fontScale" class="font-mono font-bold">100%</span>
+                                </label>
+                                <input type="range" id="fontScale" min="50" max="200" step="1" value="100" oninput="updateLayoutFromControls()" class="w-full accent-brand-purple cursor-pointer">
+                                <span class="text-[9px] text-purple-700 leading-none block mt-1">Adjusts size of all submitted messages.</span>
+                            </div>
+
                             <div>
                                 <label class="block text-[11px] font-semibold text-slate-600 mb-1">Line Height</label>
                                 <select id="messageLineHeight" onchange="updateLayoutFromControls()" class="w-full p-1.5 border border-slate-300 rounded text-xs bg-white">
@@ -569,7 +574,6 @@
     <!-- OFF-SCREEN HIGH-RESOLUTION 2-IN-1 PDF COMPILATION CONTAINER -->
     <div class="fixed top-0 left-[-9999px] pointer-events-none">
         
-        <!-- High-Res Single Card Target (1000px x 1414px base container) -->
         <div id="renderSingleTemplate" class="card-export-target border border-slate-200 relative">
             <div class="tpl-recipient-layer absolute">
                 <p class="tpl-teacher-container m-0 p-0 font-montserrat font-black">
@@ -583,10 +587,8 @@
             </div>
         </div>
 
-        <!-- High-Res 2-in-1 Pair Container (2040px x 1440px) -->
         <div id="render2in1PairTemplate" class="w-[2040px] h-[1440px] bg-white p-4 flex items-center justify-between relative">
             <div id="pairLeftCard" class="w-[1000px] h-[1414px] relative"></div>
-            <!-- Center Cutting Guide Line -->
             <div class="w-[2px] h-full border-r-2 border-dashed border-slate-300"></div>
             <div id="pairRightCard" class="w-[1000px] h-[1414px] relative"></div>
         </div>
@@ -604,13 +606,10 @@
             measurementId: "G-71R21S274M"
         };
 
-        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
         const ADMIN_PASSWORD = "cuteangmganalayout";
-
-        // Reference width constant (440px preview container width)
         const REF_WIDTH = 440;
 
         const DEFAULT_LAYOUT = {
@@ -626,6 +625,7 @@
             messageWidth: 84,
             messageHeight: 44,
             messageFontSize: 13,
+            fontScale: 100, // Percentage scaling factor default
             messageLineHeight: '1.6',
             messageFontFamily: 'Inter, sans-serif',
             messageColor: '#1e293b'
@@ -686,6 +686,7 @@
             layoutConfig.messageWidth = parseFloat(document.getElementById('messageWidth').value);
             layoutConfig.messageHeight = parseFloat(document.getElementById('messageHeight').value);
             layoutConfig.messageFontSize = parseFloat(document.getElementById('messageFontSize').value);
+            layoutConfig.fontScale = parseFloat(document.getElementById('fontScale').value);
             layoutConfig.messageLineHeight = document.getElementById('messageLineHeight').value;
             layoutConfig.messageFontFamily = document.getElementById('messageFontFamily').value;
             layoutConfig.messageColor = document.getElementById('messageColor').value;
@@ -706,6 +707,7 @@
             document.getElementById('val_messageWidth').innerText = `${layoutConfig.messageWidth}%`;
             document.getElementById('val_messageHeight').innerText = `${layoutConfig.messageHeight}%`;
             document.getElementById('val_messageFontSize').innerText = `${layoutConfig.messageFontSize}px`;
+            document.getElementById('val_fontScale').innerText = `${layoutConfig.fontScale}%`;
 
             saveLayoutConfig();
             applyLayoutToDOM();
@@ -722,8 +724,9 @@
             document.getElementById('val_userTextSize').innerText = `${val}px`;
             const msgLayer = document.getElementById('previewMessageLayer');
             if (msgLayer) {
-                // Convert px to cqw (Container Query Width) units
-                const fontCqw = (parseFloat(val) / REF_WIDTH) * 100;
+                const scaleMultiplier = (layoutConfig.fontScale || 100) / 100;
+                const scaledPx = parseFloat(val) * scaleMultiplier;
+                const fontCqw = (scaledPx / REF_WIDTH) * 100;
                 msgLayer.style.fontSize = `${fontCqw}cqw`;
             }
         }
@@ -741,7 +744,9 @@
             }
 
             const activeMessageFontSize = customMessageFontSize !== null ? customMessageFontSize : (document.getElementById('userTextSize')?.value || layoutConfig.messageFontSize);
-            const msgFontCqw = (parseFloat(activeMessageFontSize) / REF_WIDTH) * 100;
+            const scaleMultiplier = (layoutConfig.fontScale || 100) / 100;
+            const scaledMessagePx = parseFloat(activeMessageFontSize) * scaleMultiplier;
+            const msgFontCqw = (scaledMessagePx / REF_WIDTH) * 100;
 
             const msgLayer = document.getElementById('previewMessageLayer');
             if (msgLayer) {
@@ -755,7 +760,6 @@
                 msgLayer.style.color = layoutConfig.messageColor;
             }
 
-            // Export Target Overlays (Uses container queries too so proportions match pixel-for-pixel)
             const exportTarget = document.getElementById('renderSingleTemplate');
             if (exportTarget) {
                 const expRec = exportTarget.querySelector('.tpl-recipient-layer');
@@ -783,7 +787,6 @@
             }
         }
 
-        // Convert array buffer / PDF page to ultra-high-res DataURL
         async function renderPdfToDataUrl(pdfData) {
             const loadingTask = pdfjsLib.getDocument(pdfData);
             const pdf = await loadingTask.promise;
@@ -986,7 +989,9 @@
             
             const msgLayer = document.getElementById('previewMessageLayer');
             if (msgLayer) {
-                const fontCqw = (textSize / REF_WIDTH) * 100;
+                const scaleMultiplier = (layoutConfig.fontScale || 100) / 100;
+                const scaledPx = textSize * scaleMultiplier;
+                const fontCqw = (scaledPx / REF_WIDTH) * 100;
                 msgLayer.style.fontSize = `${fontCqw}cqw`;
             }
 
@@ -1168,7 +1173,9 @@
             const customSize = card.textSize || layoutConfig.messageFontSize;
             const previewMsg = clone.querySelector('#previewMessageLayer');
             if (previewMsg) {
-                const fontCqw = (customSize / REF_WIDTH) * 100;
+                const scaleMultiplier = (layoutConfig.fontScale || 100) / 100;
+                const scaledPx = customSize * scaleMultiplier;
+                const fontCqw = (scaledPx / REF_WIDTH) * 100;
                 previewMsg.style.fontSize = `${fontCqw}cqw`;
             }
 
@@ -1227,7 +1234,9 @@
 
         function buildSingleCardHTML(card) {
             const customSize = card.textSize || layoutConfig.messageFontSize;
-            const msgFontCqw = (customSize / REF_WIDTH) * 100;
+            const scaleMultiplier = (layoutConfig.fontScale || 100) / 100;
+            const scaledMessagePx = customSize * scaleMultiplier;
+            const msgFontCqw = (scaledMessagePx / REF_WIDTH) * 100;
             const recFontCqw = (layoutConfig.recipientFontSize / REF_WIDTH) * 100;
 
             return `
