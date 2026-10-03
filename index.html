@@ -89,10 +89,10 @@
         
         @font-face {
           font-family: 'CursiveOption';
-          src: url('./Cursive%20Option.ttf') format('truetype'),
-               url('./Cursive Option.ttf') format('truetype');
-          font-weight: normal;
+          src: url('./Cursive Option.ttf') format('truetype');
+          font-weight: 400;
           font-style: normal;
+          font-display: block;
         }
     </style>
 </head>
@@ -1199,6 +1199,57 @@
             return div.innerHTML;
         }
 
+        // Make sure every font used by the preview/export is fully loaded
+        // before html2canvas captures the card. This is especially important
+        // for the local Cursive Option.ttf font.
+        async function waitForExportFonts() {
+            try {
+                if (document.fonts) {
+                    // Force-load the local custom font and all Google fonts used by the app.
+                    await Promise.all([
+                        document.fonts.load('400 40px "CursiveOption"'),
+                        document.fonts.load('900 40px "Montserrat"'),
+                        document.fonts.load('400 40px "Inter"'),
+                        document.fonts.load('700 40px "Playfair Display"'),
+                        document.fonts.load('700 40px "Roboto Mono"')
+                    ]);
+                    await document.fonts.ready;
+                }
+
+                // Extra verification for browsers that report the font as ready
+                // before the first actual layout/render pass.
+                const test = document.createElement('span');
+                test.textContent = 'Cursive Option Font Test';
+                test.style.cssText = `
+                    position: fixed;
+                    left: -10000px;
+                    top: -10000px;
+                    visibility: hidden;
+                    font-family: "CursiveOption", cursive;
+                    font-size: 40px;
+                    font-weight: 400;
+                    white-space: nowrap;
+                `;
+                document.body.appendChild(test);
+
+                // Trigger layout so the browser actually resolves the font.
+                void test.offsetWidth;
+                await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+                if (document.fonts && !document.fonts.check('400 40px "CursiveOption"')) {
+                    // One final direct FontFace load attempt.
+                    const existing = Array.from(document.fonts).find(f => f.family === 'CursiveOption');
+                    if (existing) await existing.load();
+                }
+
+                document.body.removeChild(test);
+            } catch (error) {
+                console.warn('Font preload warning:', error);
+                // Do not block PDF export if a browser does not fully support FontFace.
+                await new Promise(resolve => requestAnimationFrame(resolve));
+            }
+        }
+
         async function downloadSingleCardPDF(card) {
             const { jsPDF } = window.jspdf;
             const template = document.getElementById('renderSingleTemplate');
@@ -1210,8 +1261,10 @@
             applyLayoutToDOM(customSize);
 
             try {
-                // Ensure browser fonts finish parsing before canvas draw
-                await document.fonts.ready;
+                await waitForExportFonts();
+                // Re-apply the layout after fonts are ready so the captured DOM
+                // uses the exact same typography as the live preview.
+                applyLayoutToDOM(customSize);
 
                 const canvas = await html2canvas(template, { 
                     scale: 3, 
@@ -1272,9 +1325,6 @@
                 return;
             }
 
-            // Ensure browser custom fonts finish rendering before drawing canvas
-            await document.fonts.ready;
-
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF({
                 orientation: 'landscape',
@@ -1301,6 +1351,8 @@
                     pairRight.innerHTML = '';
                     pairRight.style.visibility = 'hidden';
                 }
+
+                await waitForExportFonts();
 
                 const canvas = await html2canvas(pairContainer, { 
                     scale: 3, 
