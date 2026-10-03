@@ -89,7 +89,8 @@
         
         @font-face {
           font-family: 'CursiveOption';
-          src: url('./Cursive Option.ttf') format('truetype');
+          src: url('./Cursive%20Option.ttf') format('truetype'),
+               url('./Cursive Option.ttf') format('truetype');
           font-weight: normal;
           font-style: normal;
         }
@@ -1209,6 +1210,9 @@
             applyLayoutToDOM(customSize);
 
             try {
+                // Ensure browser fonts finish parsing before canvas draw
+                await document.fonts.ready;
+
                 const canvas = await html2canvas(template, { 
                     scale: 3, 
                     useCORS: true, 
@@ -1267,6 +1271,9 @@
                 alert('No card submissions selected to export.');
                 return;
             }
+
+            // Ensure browser custom fonts finish rendering before drawing canvas
+            await document.fonts.ready;
 
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF({
